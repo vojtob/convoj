@@ -70,9 +70,7 @@ def _project_paths(sourcedir):
 
     paths.destdir = paths.sourcedir / 'build'
 
-    # paths.alldir      = paths.destdir / 'img_all'
     paths.pngdir      = paths.destdir / 'img_png'
-    # paths.svgdir      = paths.destdir / 'svg'
     paths.archidir    = paths.destdir / 'svg_archi'
     paths.plantumldir = paths.destdir / 'svg_plantuml'
     paths.umletdir    = paths.destdir / 'svg_umlet'
@@ -111,12 +109,12 @@ def configure_parser():
         '--src', '--sourcedirectory', 
         help='source directory, default is current directory', 
         default=None)
-    parser.add_argument( # destination directory
-        '--dest', 
-        help='destination directory',
-        default=None)
+    # parser.add_argument( # destination directory
+    #     '--dest', 
+    #     help='destination directory',
+    #     default=None)
     parser.add_argument( # command
-        'command', #nargs='?', default='all', -> toto by znamenalo, ze nemsi zadat command, default je all
+        'command', #nargs='?', default='all', -> toto by znamenalo, ze nemusi zadat command, default je all
         choices=['all', 'clean', 'svg', 'umlet', 'plantuml', 'mermaid', 'drawio', 'archi'],
         help="""
 all:      convert all images
@@ -124,7 +122,7 @@ clean:    clean all generated files and folders
 drawio:   convert drawio images, drawio images -> drawio -> png
 umlet:    convert umlet images, umlet -> svg -> png
 plantUML: convert plantUML images, plantUML images -> svg -> png
-mermaid:  convert mermaid images, mermaid images -> png -> png
+mermaid:  convert mermaid images, mermaid images -> png
 svg:      convert  svg in source to png, could be used for svg images from archi
 archi:    convert  svg in archi folder"""
     )
@@ -135,7 +133,7 @@ def run_command(paths, args):
     if args.command in ['all', 'drawio', 'svg', 'archi', 'umlet', 'plantuml', 'mermaid']:
         convert.run_convert(paths, args)
 
-    if args.command=='clean':
+    if args.command == 'clean':
         logger.debug('start cleaning')
         if paths.destdir.exists():
             shutil.rmtree(paths.destdir)

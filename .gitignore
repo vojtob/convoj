@@ -21,6 +21,11 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
 # drawio backup files
 .\$*.drawio.bkp
 

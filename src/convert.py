@@ -6,17 +6,13 @@ import re
 
 logger = logging.getLogger(__name__)
 
-# global_destination_path = None
-
-def _img_walk(source_path, orig_extension, destination_path, new_extension, onfile, file, poster_scale):
-    # global global_destination_path
+def _img_walk(source_path, orig_extension, destination_path, new_extension, onfile, file, scale):
     logger.info(f'convert {str(source_path)}({orig_extension}) -> {str(destination_path)}({new_extension})')
 
     if Path(destination_path).resolve().is_relative_to(Path(source_path).resolve()):
         logger.error("Source path is a subpath of destination path. Aborting to prevent recursion.")
         return
-    if(file):
-        processedFile = False
+    if file:
         pf = Path(source_path, file)
         pf = str(pf).replace('\\', '/')
         logger.debug(f"match file path {pf}")
@@ -34,26 +30,23 @@ def _img_walk(source_path, orig_extension, destination_path, new_extension, onfi
         for f in [f for f in filenames if f.endswith(orig_extension)]:          
             # ffrom is original full name with path and orig extension
             ffrom = os.path.join(dirpath, f)
-            if(file):
-                # if Path(ffrom).with_suffix('') != pf:
+            if file:
                 x = str(Path(ffrom).with_suffix('')).replace('\\', '/')
                 logger.debug(f"pattern {pf}")
                 logger.debug(f"string {x}")
                 if not re.match(pf, x):
                     # we want to process a specific file, but not this
-                    # print('skip file ', imgdef['fileName'], args.file)
-                    # continue
                     continue
             # fto is destination full name with path and new extension
             fto = ffrom.replace(str(source_path), str(destination_path)).replace(orig_extension, new_extension)
-            onfile(ffrom, orig_extension, fto, new_extension, poster_scale)
+            onfile(ffrom, orig_extension, fto, new_extension, scale)
 
-def onfile_convert_drawio(fromfile, orig_extension, tofile, new_extension, poster_scale):
+def onfile_convert_drawio(fromfile, orig_extension, tofile, new_extension, scale):
 #     cmd = f'"C:\\Program Files\\draw.io\\draw.io.exe" -x --transparent -s {poster_scale} -b 10 -o "{tofile}" "{fromfile}"'
     cmd = [
         r"C:\Program Files\draw.io\draw.io.exe",
         "-x", "--transparent",
-        "-s", str(poster_scale),
+        "-s", str(scale),
         "-b", "10",
         "-o", str(tofile),
         str(fromfile),
@@ -61,18 +54,18 @@ def onfile_convert_drawio(fromfile, orig_extension, tofile, new_extension, poste
     logger.debug(cmd)
     subprocess.run(cmd)
 
-def onfile_convert_svg(fromfile, orig_extension, tofile, new_extension, poster_scale):
+def onfile_convert_svg(fromfile, orig_extension, tofile, new_extension, scale):
 #     cmd = f'magick -density {int(144 * poster_scale)} "{fromfile}" "{tofile}"'
     cmd = [
         "magick",
-        "-density", str(int(144 * poster_scale)),
+        "-density", str(int(144 * scale)),
         str(fromfile),
         str(tofile),
     ]
     logger.debug(cmd)
     subprocess.run(cmd)
 
-def onfile_convert_umlet(fromfile, orig_extension, tofile, new_extension, poster_scale):
+def onfile_convert_umlet(fromfile, orig_extension, tofile, new_extension, scale):
     umlet_path = str(Path('C:/', 'prg', 'Umlet', 'Umlet'))
     cmd = [
         umlet_path,
@@ -111,8 +104,6 @@ def onfile_convert_plantuml(fromfile, orig_extension, tofile, new_extension, sca
     subprocess.run(cmd, shell=True)
 
 def run_convert(paths, args):
-    # global global_destination_path
-    # global_destination_path = paths.destdir
 
     if (args.command=='drawio') or (args.command=='all'):
         _img_walk(
