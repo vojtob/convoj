@@ -23,6 +23,8 @@ def _img_walk(source_path, orig_extension, destination_path, new_extension, onfi
         (_, tail) = os.path.split(p)
         if str(tail) == 'old':
             continue
+        if str(tail) == 'build':
+            continue
         # create destination directory
         d = Path(dirpath.replace(str(source_path), str(destination_path)))       
         d.mkdir(parents=True, exist_ok=True)

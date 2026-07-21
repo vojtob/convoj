@@ -77,7 +77,7 @@ def _project_paths(sourcedir):
 
     if (paths.sourcedir / 'src_doc').exists():
         paths.sourcedir = paths.sourcedir / 'src_doc' / 'img'
-    else:
+    elif (paths.sourcedir / 'docs' / 'img').exists():
         paths.sourcedir = paths.sourcedir / 'docs' / 'img'
 
     return paths
@@ -105,10 +105,10 @@ def configure_parser():
         '-f', '--file', 
         help='process only this file / directory', 
         default=None)
-    parser.add_argument( # source directory, more for testing
-        '--src', '--sourcedirectory', 
-        help='source directory, default is current directory', 
-        default=None)
+    # parser.add_argument( # source directory, more for testing
+    #     '--src', '--sourcedirectory', 
+    #     help='source directory, default is current directory', 
+    #     default=None)
     # parser.add_argument( # destination directory
     #     '--dest', 
     #     help='destination directory',
@@ -147,10 +147,11 @@ if __name__ == '__main__':
     parser = configure_parser()
     args = parser.parse_args()
 
-    if args.src:
-        sourcedir = Path(args.src)
-    else:
-        sourcedir = Path.cwd()
+    # if args.src:
+    #     sourcedir = Path(args.src)
+    # else:
+    #     sourcedir = Path.cwd()
+    sourcedir = Path.cwd()
 
     # set up logging
     log_level = getattr(logging, args.log.upper(), None)

@@ -1,0 +1,72 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/27.0.5 Chrome/134.0.6998.205 Electron/35.3.0 Safari/537.36" version="27.0.5">
+  <diagram name="convoj_concept" id="convoj-concept">
+    <mxGraphModel dx="2066" dy="1234" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="0" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="actor" value="Autor dokumentácie" style="shape=mxgraph.archimate3.application;appType=actor;archiType=square;fillColor=#FFF323;strokeColor=#000000;html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="440" y="120" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="convoj" value="convoj.py&#xa;(CLI, štruktúra projektu)" style="shape=mxgraph.archimate3.application;appType=comp;archiType=square;fillColor=#66CCFF;strokeColor=#000000;html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="440" y="220" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="convert" value="convert.py&#xa;(konverzia súborov)" style="shape=mxgraph.archimate3.application;appType=comp;archiType=square;fillColor=#66CCFF;strokeColor=#000000;html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="440" y="320" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="src" value="docs/img&lt;br&gt;src_doc/img&lt;br&gt;(.drawio .svg .puml .uxf .mmd)" style="shape=mxgraph.archimate3.application;appType=artifact;archiType=square;fillColor=#33CC66;strokeColor=#000000;html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="120" y="320" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="out" value="build/img_png&#xa;(PNG výstup)" style="shape=mxgraph.archimate3.application;appType=artifact;archiType=square;fillColor=#33CC66;strokeColor=#000000;html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="760" y="320" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="drawio" value="draw.io" style="shape=mxgraph.archimate3.application;appType=sysSw;archiType=square;fillColor=#FFFFFF;strokeColor=#00A13C;html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="80" y="460" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="magick" value="ImageMagick" style="shape=mxgraph.archimate3.application;appType=sysSw;archiType=square;fillColor=#FFFFFF;strokeColor=#00A13C;html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="270" y="460" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="plantuml" value="PlantUML" style="shape=mxgraph.archimate3.application;appType=sysSw;archiType=square;fillColor=#FFFFFF;strokeColor=#00A13C;html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="460" y="460" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="umlet" value="Umlet" style="shape=mxgraph.archimate3.application;appType=sysSw;archiType=square;fillColor=#FFFFFF;strokeColor=#00A13C;html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="650" y="460" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mermaid" value="mermaid-cli" style="shape=mxgraph.archimate3.application;appType=sysSw;archiType=square;fillColor=#FFFFFF;strokeColor=#00A13C;html=1;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="840" y="460" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" style="html=1;endArrow=block;endFill=1;edgeStyle=elbowEdgeStyle;elbow=vertical;rounded=0;" parent="1" source="convoj" target="convert" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" style="html=1;endArrow=block;endFill=1;edgeStyle=elbowEdgeStyle;elbow=vertical;rounded=0;" parent="1" source="convert" target="drawio" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" style="html=1;endArrow=block;endFill=1;edgeStyle=elbowEdgeStyle;elbow=vertical;rounded=0;" parent="1" source="convert" target="magick" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="" style="html=1;endArrow=block;endFill=1;edgeStyle=elbowEdgeStyle;elbow=vertical;rounded=0;" parent="1" source="convert" target="plantuml" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="" style="html=1;endArrow=block;endFill=1;edgeStyle=elbowEdgeStyle;elbow=vertical;rounded=0;" parent="1" source="convert" target="umlet" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="" style="html=1;endArrow=block;endFill=1;edgeStyle=elbowEdgeStyle;elbow=vertical;rounded=0;" parent="1" source="convert" target="mermaid" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="číta" style="html=1;endArrow=open;endFill=0;dashed=1;edgeStyle=elbowEdgeStyle;elbow=vertical;rounded=0;" parent="1" source="src" target="convert" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="370" y="420" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e10" value="zapisuje" style="html=1;endArrow=open;endFill=0;dashed=1;edgeStyle=elbowEdgeStyle;elbow=vertical;rounded=0;" parent="1" source="convert" target="out" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="MekUrtkJEnJRdPIVY1jn-1" value="" style="edgeStyle=elbowEdgeStyle;html=1;endArrow=block;dashed=0;elbow=vertical;endFill=1;rounded=0;" edge="1" parent="1" source="actor" target="convoj">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="400" y="650" as="sourcePoint" />
+            <mxPoint x="560" y="650" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
