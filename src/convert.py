@@ -135,7 +135,19 @@ def onfile_convert_plantuml(fromfile, orig_extension, tofile, new_extension, sca
     logger.debug(cmd)
     subprocess.run(cmd, shell=True)
 
+def onfile_copy(fromfile, orig_extension, tofile, new_extension, scale):
+    logger.debug(f'copy {fromfile} -> {tofile}')
+    shutil.copy2(fromfile, tofile)
+
 def run_convert(paths, args):
+
+    if (args.command=='copy') or (args.command=='all'):
+        for ext in ('.png', '.webp', '.ico'):
+            _img_walk(
+                paths.sourcedir, ext,
+                paths.pngdir, ext,
+                onfile_copy,
+                getattr(args, 'file', None), args.scale)
 
     if (args.command=='drawio') or (args.command=='all'):
         _img_walk(

@@ -33,7 +33,7 @@ Convoj teda sám nič nekreslí — iba prevoláva externé nástroje:
 ./convoj_docker.sh all -s 4             # väčšia mierka (postery)
 ```
 
-Príkazy: `all`, `clean`, `svg`, `drawio`, `plantuml`, `umlet`, `mermaid`, `archi`.
+Príkazy: `all`, `clean`, `svg`, `drawio`, `plantuml`, `umlet`, `mermaid`, `archi`, `copy` (hotové `.png`/`.webp`/`.ico` sa nekonvertujú, len skopírujú do `img_png`).
 Prepínače: `-f` (len daný súbor/adresár), `-s` (mierka, default 2.0), `-l` (loglevel), `-g` (log do súboru).
 
 Wrappery: `convoj_docker.sh` (Linux/WSL, spúšťa Docker kontajner), `convoj_linux.sh` (Linux/WSL natívne — nástroje musia byť nainštalované lokálne), `convoj.bat` (Windows natívne, s `CONVOJ_DOCKER=1` cez Docker).

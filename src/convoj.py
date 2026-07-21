@@ -115,7 +115,7 @@ def configure_parser():
     #     default=None)
     parser.add_argument( # command
         'command', #nargs='?', default='all', -> toto by znamenalo, ze nemusi zadat command, default je all
-        choices=['all', 'clean', 'svg', 'umlet', 'plantuml', 'mermaid', 'drawio', 'archi'],
+        choices=['all', 'clean', 'svg', 'umlet', 'plantuml', 'mermaid', 'drawio', 'archi', 'copy'],
         help="""
 all:      convert all images
 clean:    clean all generated files and folders
@@ -124,13 +124,14 @@ umlet:    convert umlet images, umlet -> svg -> png
 plantUML: convert plantUML images, plantUML images -> svg -> png
 mermaid:  convert mermaid images, mermaid images -> png
 svg:      convert  svg in source to png, could be used for svg images from archi
-archi:    convert  svg in archi folder"""
+archi:    convert  svg in archi folder
+copy:     copy ready-made png, webp and ico files to img_png"""
     )
     
     return parser
 
 def run_command(paths, args):
-    if args.command in ['all', 'drawio', 'svg', 'archi', 'umlet', 'plantuml', 'mermaid']:
+    if args.command in ['all', 'drawio', 'svg', 'archi', 'umlet', 'plantuml', 'mermaid', 'copy']:
         convert.run_convert(paths, args)
 
     if args.command == 'clean':
