@@ -16,8 +16,16 @@ done
 [[ "$root" == "/" ]] && root="$PWD"
 rel="${PWD#"$root"}"   # podcesta pod koreňom (prázdna, ak stojíme v koreni)
 
+# Pri rootless Dockeri / Docker Desktop sa UID mapujú inak — --user by
+# stratil práva na mount. Tam beží kontajner ako root a výstupy aj tak
+# patria prihlásenému užívateľovi.
+user_args=(--user "$(id -u):$(id -g)")
+if docker info --format '{{.SecurityOptions}}' 2>/dev/null | grep -q rootless; then
+    user_args=()
+fi
+
 exec docker run --rm \
-    --user "$(id -u):$(id -g)" \
+    "${user_args[@]}" \
     -v "$root:/work" \
     -w "/work$rel" \
     "${CONVOJ_IMAGE:-convoj}" "$@"
