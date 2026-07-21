@@ -1,10 +1,46 @@
 import logging
 import os
 from pathlib import Path
+import shlex
+import shutil
 import subprocess
 import re
 
 logger = logging.getLogger(__name__)
+
+_IS_WINDOWS = (os.name == 'nt')
+
+def _tool_cmd(env_var, default_win, default_linux):
+    """
+    Resolve command for an external tool.
+    Priority: env variable (may contain arguments, e.g. "xvfb-run drawio"),
+    otherwise the per-OS default (list of tokens).
+    """
+    value = os.environ.get(env_var)
+    if value:
+        return shlex.split(value, posix=not _IS_WINDOWS)
+    return list(default_win if _IS_WINDOWS else default_linux)
+
+def _default_magick_linux():
+    if shutil.which('magick'):
+        return ['magick']
+    return ['convert']  # ImageMagick 6 (e.g. Ubuntu apt) has no `magick` binary
+
+DRAWIO_CMD   = _tool_cmd('CONVOJ_DRAWIO_CMD',
+                         [r"C:\Program Files\draw.io\draw.io.exe"],
+                         ['drawio'])
+MAGICK_CMD   = _tool_cmd('CONVOJ_MAGICK_CMD',
+                         ['magick'],
+                         _default_magick_linux())
+UMLET_CMD    = _tool_cmd('CONVOJ_UMLET_CMD',
+                         [str(Path('C:/', 'prg', 'Umlet', 'Umlet'))],
+                         ['umlet'])
+MMDC_CMD     = _tool_cmd('CONVOJ_MMDC_CMD',
+                         [str(Path('C:/prg/node_modules/.bin/mmdc'))],
+                         ['mmdc'])
+PLANTUML_JAR = os.environ.get('CONVOJ_PLANTUML_JAR',
+                              'C:/prg/plantuml/plantuml-mit-1.2025.2.jar' if _IS_WINDOWS
+                              else '/opt/plantuml/plantuml.jar')
 
 def _img_walk(source_path, orig_extension, destination_path, new_extension, onfile, file, scale):
     logger.info(f'convert {str(source_path)}({orig_extension}) -> {str(destination_path)}({new_extension})')
@@ -44,9 +80,8 @@ def _img_walk(source_path, orig_extension, destination_path, new_extension, onfi
             onfile(ffrom, orig_extension, fto, new_extension, scale)
 
 def onfile_convert_drawio(fromfile, orig_extension, tofile, new_extension, scale):
-#     cmd = f'"C:\\Program Files\\draw.io\\draw.io.exe" -x --transparent -s {poster_scale} -b 10 -o "{tofile}" "{fromfile}"'
     cmd = [
-        r"C:\Program Files\draw.io\draw.io.exe",
+        *DRAWIO_CMD,
         "-x", "--transparent",
         "-s", str(scale),
         "-b", "10",
@@ -57,9 +92,8 @@ def onfile_convert_drawio(fromfile, orig_extension, tofile, new_extension, scale
     subprocess.run(cmd)
 
 def onfile_convert_svg(fromfile, orig_extension, tofile, new_extension, scale):
-#     cmd = f'magick -density {int(144 * poster_scale)} "{fromfile}" "{tofile}"'
     cmd = [
-        "magick",
+        *MAGICK_CMD,
         "-density", str(int(144 * scale)),
         str(fromfile),
         str(tofile),
@@ -68,9 +102,8 @@ def onfile_convert_svg(fromfile, orig_extension, tofile, new_extension, scale):
     subprocess.run(cmd)
 
 def onfile_convert_umlet(fromfile, orig_extension, tofile, new_extension, scale):
-    umlet_path = str(Path('C:/', 'prg', 'Umlet', 'Umlet'))
     cmd = [
-        umlet_path,
+        *UMLET_CMD,
         "-action=convert",
         "-format=svg",
         f"-filename={fromfile}",
@@ -88,10 +121,8 @@ def onfile_convert_umlet(fromfile, orig_extension, tofile, new_extension, scale)
             pass
    
 def onfile_convert_mmd(fromfile, orig_extension, tofile, new_extension, scale):
-    mmpath = str(Path('C:/prg/node_modules/.bin/mmdc'))
-#     cmd = f'{mmpath} -w 1400 -i {fromfile} -o {tofile}'
     cmd = [
-        mmpath,
+        *MMDC_CMD,
         "-w", "1400",
         "-i", str(fromfile),
         "-o", str(tofile),
@@ -100,8 +131,7 @@ def onfile_convert_mmd(fromfile, orig_extension, tofile, new_extension, scale):
     subprocess.run(cmd)
 
 def onfile_convert_plantuml(fromfile, orig_extension, tofile, new_extension, scale):
-    pupath = str(Path('C:/prg/plantuml/plantuml-mit-1.2025.2.jar'))
-    cmd = f'cat {fromfile} | java -jar {pupath} -tsvg -pipe > {tofile}'
+    cmd = f'cat {fromfile} | java -jar {PLANTUML_JAR} -tsvg -pipe > {tofile}'
     logger.debug(cmd)
     subprocess.run(cmd, shell=True)
 

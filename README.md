@@ -26,24 +26,53 @@ Convoj teda sám nič nekreslí — iba prevoláva externé nástroje:
 ## Použitie
 
 ```bash
-./convoj.sh all                  # skonvertuj všetko
-./convoj.sh drawio               # len drawio súbory
-./convoj.sh clean                # zmaž build/ (generované súbory)
-./convoj.sh all -f Business/ciel # len konkrétny súbor / adresár
-./convoj.sh all -s 4             # väčšia mierka (postery)
+./convoj_docker.sh all                  # skonvertuj všetko (v Dockeri)
+./convoj_docker.sh drawio               # len drawio súbory
+./convoj_docker.sh clean                # zmaž build/ (generované súbory)
+./convoj_docker.sh all -f Business/ciel # len konkrétny súbor / adresár
+./convoj_docker.sh all -s 4             # väčšia mierka (postery)
 ```
 
 Príkazy: `all`, `clean`, `svg`, `drawio`, `plantuml`, `umlet`, `mermaid`, `archi`.
 Prepínače: `-f` (len daný súbor/adresár), `-s` (mierka, default 2.0), `-l` (loglevel), `-g` (log do súboru).
 
-Na Windows je wrapper `convoj.bat`, na Linux/WSL `convoj.sh`.
+Wrappery: `convoj_docker.sh` (Linux/WSL, spúšťa Docker kontajner), `convoj_linux.sh` (Linux/WSL natívne — nástroje musia byť nainštalované lokálne), `convoj.bat` (Windows natívne, s `CONVOJ_DOCKER=1` cez Docker).
+
+## Docker
+
+Image obsahuje python skripty, ImageMagick a drawio (PlantUML, UMLet a Mermaid zatiaľ nie).
+
+```bash
+# build (raz, v adresári convoj)
+docker build -t convoj .
+
+# spustenie — wrapper namountuje projekt a spustí kontajner
+cd ~/moj-projekt
+~/convoj/convoj_docker.sh all                 # Linux/WSL
+set CONVOJ_DOCKER=1 && convoj all             # Windows (spúšťať z koreňa projektu)
+
+# alebo priamo bez wrappera
+docker run --rm --user $(id -u):$(id -g) -v "$PWD:/work" convoj all
+```
+
+Ako to funguje: drawio je Electron aplikácia, v kontajneri beží headless cez `xvfb-run` (wrapper `docker/drawio-wrapper.sh`). Projekt sa mountuje ako `/work`, výstupy pribudnú v `build/img_png/` na disku. Iný image nastavíš cez `CONVOJ_IMAGE`.
+
+Aby sa `convoj` dal volať odkiaľkoľvek (WSL/Linux):
+
+```bash
+mkdir -p ~/.local/bin
+ln -s /mnt/c/Projects_src/vojto_tools/convoj/convoj_docker.sh ~/.local/bin/convoj
+# alebo alias: echo "alias convoj='.../convoj_docker.sh'" >> ~/.bashrc
+```
+
+Cesty k nástrojom sa dajú prebiť env premennými (inak default podľa OS): `CONVOJ_DRAWIO_CMD`, `CONVOJ_MAGICK_CMD`, `CONVOJ_UMLET_CMD`, `CONVOJ_MMDC_CMD`, `CONVOJ_PLANTUML_JAR`.
 
 ## Koncept
 
 ![convoj koncept](convoj_concept.png)
 
-Zdrojový diagram: `docs/img/convoj_concept.drawio` (PNG si vygeneruješ samotným convoj-om).
+Zdrojový diagram je v `docs/img/convoj_concept.drawio`
 
 ## Obmedzenia / TODO
 
-- Cesty k externým nástrojom sú zatiaľ natvrdo v `convert.py` (Windows cesty) — cieľ je presunúť convoj do **Dockeru**, aby sa dal rovnako spúšťať aj na Ubuntu.
+- Docker image zatiaľ nepokrýva PlantUML, UMLet a Mermaid — tie fungujú len natívne (Windows).

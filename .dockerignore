@@ -1,0 +1,6 @@
+.git
+build
+docs
+src/__pycache__
+*.png
+README.md
