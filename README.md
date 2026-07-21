@@ -31,6 +31,7 @@ Convoj teda sám nič nekreslí — iba prevoláva externé nástroje:
 ./convoj_docker.sh clean                # zmaž build/ (generované súbory)
 ./convoj_docker.sh all -f Business/ciel # len konkrétny súbor / adresár
 ./convoj_docker.sh all -s 4             # väčšia mierka (postery)
+convoj -imgdir build/logo -imgdestdir logo svg   # vstupne svg hlada v build/logo a výstup ukladá do build/img_png/logo
 ```
 
 Príkazy: `all`, `clean`, `svg`, `drawio`, `plantuml`, `umlet`, `mermaid`, `archi`, `copy` (hotové `.png`/`.webp`/`.ico` sa nekonvertujú, len skopírujú do `img_png`).

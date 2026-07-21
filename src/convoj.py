@@ -60,7 +60,7 @@ def find_project_home(sourcedir: str | Path, markers: Sequence[str] = _MARKERS_P
 
     return None
 
-def _project_paths(sourcedir):
+def _project_paths(sourcedir, imgsourcedirectory, imgdestdirectory):
     paths = SimpleNamespace()
 
     paths.sourcedir = find_project_home(sourcedir)
@@ -75,7 +75,12 @@ def _project_paths(sourcedir):
     paths.plantumldir = paths.destdir / 'svg_plantuml'
     paths.umletdir    = paths.destdir / 'svg_umlet'
 
-    if (paths.sourcedir / 'src_doc').exists():
+    if imgdestdirectory:
+        paths.pngdir = paths.pngdir / imgdestdirectory
+
+    if imgsourcedirectory and (paths.sourcedir / imgsourcedirectory).exists():
+        paths.sourcedir = paths.sourcedir / imgsourcedirectory
+    elif (paths.sourcedir / 'src_doc').exists():
         paths.sourcedir = paths.sourcedir / 'src_doc' / 'img'
     elif (paths.sourcedir / 'docs' / 'img').exists():
         paths.sourcedir = paths.sourcedir / 'docs' / 'img'
@@ -105,14 +110,14 @@ def configure_parser():
         '-f', '--file', 
         help='process only this file / directory', 
         default=None)
-    # parser.add_argument( # source directory, more for testing
-    #     '--src', '--sourcedirectory', 
-    #     help='source directory, default is current directory', 
-    #     default=None)
-    # parser.add_argument( # destination directory
-    #     '--dest', 
-    #     help='destination directory',
-    #     default=None)
+    parser.add_argument( # image source directory
+        '-imgdir', '--imgsourcedirectory', 
+        help='starting directory for images', 
+        default=None)
+    parser.add_argument( # add this to destination directory
+        '-imgdestdir', '--imgdestdirectory', 
+        help='add this path to destination directory',
+        default=None)
     parser.add_argument( # command
         'command', #nargs='?', default='all', -> toto by znamenalo, ze nemusi zadat command, default je all
         choices=['all', 'clean', 'svg', 'umlet', 'plantuml', 'mermaid', 'drawio', 'archi', 'copy'],
@@ -162,7 +167,7 @@ if __name__ == '__main__':
         logging.basicConfig(encoding='utf-8', level=log_level)
 
     logger.info('convoj started')
-    paths = _project_paths(sourcedir)
+    paths = _project_paths(sourcedir, args.imgsourcedirectory, args.imgdestdirectory)
     logger.debug(f'{args=}')
     logger.debug(f'{paths=}')
     
