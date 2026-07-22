@@ -3,6 +3,31 @@
 # (vychádza zo SIA repozitára)
 # -----------------------------------------
 
+# -----------------------------------------
+# Konce riadkov – jednotné pre Windows aj Linux
+# -----------------------------------------
+
+# Textové súbory git normalizuje (v repe vždy LF)
+* text=auto
+
+# LF vynútené aj pri checkoute na Windows
+*.sh       text eol=lf
+*.php      text eol=lf
+*.mustache text eol=lf
+*.py       text eol=lf
+*.js       text eol=lf
+*.css      text eol=lf
+*.html     text eol=lf
+*.adoc     text eol=lf
+*.md       text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+*.json     text eol=lf
+
+# Windows skripty potrebujú CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
 # AsciiDoc a textové súbory: normálny diff
 *.adoc text diff
 *.md   text diff
