@@ -39,6 +39,35 @@ Prepínače: `-f` (len daný súbor/adresár), `-s` (mierka, default 2.0), `-l` 
 
 Wrappery: `convoj_docker.sh` (Linux/WSL, spúšťa Docker kontajner), `convoj_linux.sh` (Linux/WSL natívne — nástroje musia byť nainštalované lokálne), `convoj.bat` (Windows natívne, s `CONVOJ_DOCKER=1` cez Docker).
 
+### setup na ubuntu
+
+Aby som vedel ľahko spúšťať convoj tak treba do `~/bin` pridať linku na script
+
+```bash
+mkdir -p ~/bin
+ln -s /mnt/c/Projects_src/vojto_tools/convoj/convoj_docker.sh ~/bin/convoj
+```
+
+Overenie, že ~/bin je v PATH
+
+```bash
+echo $PATH | tr ':' '\n' | grep "$HOME/bin"
+```
+
+Ak nie, tak to dobre pridať do `~/.profile`, na koniec treba pridať riadok
+
+```bash
+export PATH="$HOME/bin:$PATH"
+```
+
+Overí sa cez 
+
+```bash
+type convoj        # má vypísať: convoj is /home/vojtechbalint/bin/convoj
+```
+
+
+
 ## Docker
 
 Image obsahuje python skripty, ImageMagick a drawio (PlantUML, UMLet a Mermaid zatiaľ nie).
