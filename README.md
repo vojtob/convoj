@@ -62,12 +62,11 @@ Aby sa `convoj` dal volať odkiaľkoľvek (WSL/Linux):
 
 ```bash
 mkdir -p ~/.local/bin
+ln -s ~/Projects/vojto_tools/convoj/convoj_docker.sh ~/.local/bin/convoj
 ln -s /mnt/c/Projects_src/vojto_tools/convoj/convoj_docker.sh ~/.local/bin/convoj
-ln -s /mnt/c/Projects/vojto_tools/convoj/convoj_docker.sh ~/.local/bin/convoj
 # alebo alias: echo "alias convoj='.../convoj_docker.sh'" >> ~/.bashrc
 ```
 
-Vytvorenie tej linky dam do `~/.profile`  
 V path potrebujem mať `~/.local/bin` 
 
 
