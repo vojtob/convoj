@@ -63,27 +63,32 @@ def find_project_home(sourcedir: str | Path, markers: Sequence[str] = _MARKERS_P
 def _project_paths(sourcedir, imgsourcedirectory, imgdestdirectory):
     paths = SimpleNamespace()
 
-    paths.sourcedir = find_project_home(sourcedir)
-    if not paths.sourcedir:
+    if imgsourcedirectory and (sourcedir / imgsourcedirectory).exists():
+        paths.sourcedir = sourcedir / imgsourcedirectory
+    else:
         logger.error(f'Project home not found starting from {sourcedir}, using {sourcedir} as project home')
-        paths.sourcedir = Path(sourcedir)
+        exit()
+        # paths.sourcedir = find_project_home(sourcedir)
+        # if not paths.sourcedir:
+        #     logger.error(f'Project home not found starting from {sourcedir}, using {sourcedir} as project home')
+        #     paths.sourcedir = Path(sourcedir)
 
-    paths.destdir = paths.sourcedir / 'build'
+    if imgdestdirectory:
+        paths.destdir = sourcedir / imgdestdirectory
+    else:
+        paths.destdir = paths.sourcedir / 'build'
 
     paths.pngdir      = paths.destdir / 'img_png'
     paths.archidir    = paths.destdir / 'svg_archi'
     paths.plantumldir = paths.destdir / 'svg_plantuml'
     paths.umletdir    = paths.destdir / 'svg_umlet'
 
-    if imgdestdirectory:
-        paths.pngdir = paths.pngdir / imgdestdirectory
-
-    if imgsourcedirectory and (paths.sourcedir / imgsourcedirectory).exists():
-        paths.sourcedir = paths.sourcedir / imgsourcedirectory
-    elif (paths.sourcedir / 'src_doc').exists():
-        paths.sourcedir = paths.sourcedir / 'src_doc' / 'img'
-    elif (paths.sourcedir / 'docs' / 'img').exists():
-        paths.sourcedir = paths.sourcedir / 'docs' / 'img'
+    # if imgsourcedirectory and (sourcedir / imgsourcedirectory).exists():
+    #     paths.sourcedir = paths.sourcedir / imgsourcedirectory
+    # elif (paths.sourcedir / 'src_doc').exists():
+    #     paths.sourcedir = paths.sourcedir / 'src_doc' / 'img'
+    # elif (paths.sourcedir / 'docs' / 'img').exists():
+    #     paths.sourcedir = paths.sourcedir / 'docs' / 'img'
 
     return paths
 
@@ -111,11 +116,11 @@ def configure_parser():
         help='process only this file / directory', 
         default=None)
     parser.add_argument( # image source directory
-        '-imgdir', '--imgsourcedirectory', 
+        'imgsourcedir', 
         help='starting directory for images', 
         default=None)
     parser.add_argument( # add this to destination directory
-        '-imgdestdir', '--imgdestdirectory', 
+        'imgdestdir', 
         help='add this path to destination directory',
         default=None)
     parser.add_argument( # command
@@ -153,10 +158,6 @@ if __name__ == '__main__':
     parser = configure_parser()
     args = parser.parse_args()
 
-    # if args.src:
-    #     sourcedir = Path(args.src)
-    # else:
-    #     sourcedir = Path.cwd()
     sourcedir = Path.cwd()
 
     # set up logging
@@ -167,7 +168,7 @@ if __name__ == '__main__':
         logging.basicConfig(encoding='utf-8', level=log_level)
 
     logger.info('convoj started')
-    paths = _project_paths(sourcedir, args.imgsourcedirectory, args.imgdestdirectory)
+    paths = _project_paths(sourcedir, args.imgsourcedir, args.imgdestdir)
     logger.debug(f'{args=}')
     logger.debug(f'{paths=}')
     
