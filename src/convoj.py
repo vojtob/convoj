@@ -78,10 +78,14 @@ def _project_paths(sourcedir, imgsourcedirectory, imgdestdirectory):
     else:
         paths.destdir = paths.sourcedir / 'build'
 
-    paths.pngdir      = paths.destdir / 'img_png'
-    paths.archidir    = paths.destdir / 'svg_archi'
-    paths.plantumldir = paths.destdir / 'svg_plantuml'
-    paths.umletdir    = paths.destdir / 'svg_umlet'
+    # paths.pngdir      = paths.destdir / 'img_png'
+    # paths.archidir    = paths.destdir / 'svg_archi'
+    # paths.plantumldir = paths.destdir / 'svg_plantuml'
+    # paths.umletdir    = paths.destdir / 'svg_umlet'
+    paths.pngdir      = paths.destdir
+    paths.archidir    = paths.destdir
+    paths.plantumldir = paths.destdir
+    paths.umletdir    = paths.destdir
 
     # if imgsourcedirectory and (sourcedir / imgsourcedirectory).exists():
     #     paths.sourcedir = paths.sourcedir / imgsourcedirectory
