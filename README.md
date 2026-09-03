@@ -4,6 +4,8 @@ Nástroj na jednoduchú konverziu diagramov do PNG. Zdrojové formáty: **SVG, d
 
 Jedným príkazom skonvertuje všetky obrázky v adresári (vrátane podadresárov), alebo len konkrétny súbor (`-f`).
 
+Konverzia je inkrementálna — súbor sa konvertuje len ak výstup ešte neexistuje, alebo ak je zdroj novší ako výstup. Prekonvertovanie všetkého sa dá vynútiť prepínačom `-F`.
+
 ## Ako to funguje
 
 Convoj sa skladá z dvoch python skriptov:
@@ -35,7 +37,7 @@ convoj -imgdir build/logo -imgdestdir logo svg   # vstupne svg hlada v build/log
 ```
 
 Príkazy: `all`, `clean`, `svg`, `drawio`, `plantuml`, `umlet`, `mermaid`, `archi`, `copy` (hotové `.png`/`.webp`/`.ico` sa nekonvertujú, len skopírujú do `img_png`).
-Prepínače: `-f` (len daný súbor/adresár), `-s` (mierka, default 2.0), `-l` (loglevel), `-g` (log do súboru).
+Prepínače: `-f` (len daný súbor/adresár), `-F` (vynúť konverziu aj keď je výstup aktuálny), `-s` (mierka, default 2.0), `-l` (loglevel), `-g` (log do súboru).
 
 Wrappery: `convoj_docker.sh` (Linux/WSL, spúšťa Docker kontajner), `convoj_linux.sh` (Linux/WSL natívne — nástroje musia byť nainštalované lokálne), `convoj.bat` (Windows natívne, s `CONVOJ_DOCKER=1` cez Docker).
 

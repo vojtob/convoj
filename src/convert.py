@@ -42,7 +42,14 @@ PLANTUML_JAR = os.environ.get('CONVOJ_PLANTUML_JAR',
                               'C:/prg/plantuml/plantuml-mit-1.2025.2.jar' if _IS_WINDOWS
                               else '/opt/plantuml/plantuml.jar')
 
-def _img_walk(source_path, orig_extension, destination_path, new_extension, onfile, file, scale):
+def _is_up_to_date(fromfile, tofile):
+    """True ak cielovy subor existuje a nie je starsi ako zdroj."""
+    try:
+        return os.path.getmtime(tofile) >= os.path.getmtime(fromfile)
+    except OSError:
+        return False  # ciel neexistuje / neda sa nacitat -> konvertuj
+
+def _img_walk(source_path, orig_extension, destination_path, new_extension, onfile, file, scale, force=False):
     logger.info(f'convert {str(source_path)}({orig_extension}) -> {str(destination_path)}({new_extension})')
 
     if Path(destination_path).resolve().is_relative_to(Path(source_path).resolve()):
@@ -51,7 +58,7 @@ def _img_walk(source_path, orig_extension, destination_path, new_extension, onfi
     if file:
         pf = Path(source_path, file)
         pf = str(pf).replace('\\', '/')
-        logger.debug(f"match file path {pf}")
+        logger.info(f"Must match file path {pf}")
 
     # walk over files in from directory
     for (dirpath, _, filenames) in os.walk(source_path):
@@ -75,8 +82,13 @@ def _img_walk(source_path, orig_extension, destination_path, new_extension, onfi
                 if not re.match(pf, x):
                     # we want to process a specific file, but not this
                     continue
+                logger.debug(f"FILE matched {ffrom}")
             # fto is destination full name with path and new extension
             fto = ffrom.replace(str(source_path), str(destination_path)).replace(orig_extension, new_extension)
+            if not force and _is_up_to_date(ffrom, fto):
+                logger.debug(f'skip up-to-date {fto}')
+                continue
+            logger.debug(f'converting {ffrom} -> {fto}')
             onfile(ffrom, orig_extension, fto, new_extension, scale)
 
 def onfile_convert_drawio(fromfile, orig_extension, tofile, new_extension, scale):
@@ -147,56 +159,65 @@ def run_convert(paths, args):
                 paths.sourcedir, ext,
                 paths.pngdir, ext,
                 onfile_copy,
-                getattr(args, 'file', None), args.scale)
+                getattr(args, 'file', None), args.scale,
+                getattr(args, 'force', False))
 
     if (args.command=='drawio') or (args.command=='all'):
         _img_walk(
             paths.sourcedir, '.drawio', 
             paths.pngdir, '.png', 
             onfile_convert_drawio,
-            getattr(args, 'file', None), args.scale)
+            getattr(args, 'file', None), args.scale,
+            getattr(args, 'force', False))
 
     if (args.command=='svg') or (args.command=='all'):
         _img_walk(
             paths.sourcedir, '.svg', 
             paths.pngdir, '.png', 
             onfile_convert_svg,
-            getattr(args, 'file', None), args.scale)
+            getattr(args, 'file', None), args.scale,
+            getattr(args, 'force', False))
 
     if (args.command=='archi') or (args.command=='all'):
         _img_walk(
             paths.archidir, '.svg', 
             paths.pngdir, '.png', 
             onfile_convert_svg,
-            getattr(args, 'file', None), args.scale)
+            getattr(args, 'file', None), args.scale,
+            getattr(args, 'force', False))
 
     if (args.command=='plantuml') or (args.command=='all'):
         _img_walk(
             paths.sourcedir, '.puml', 
             paths.plantumldir, '.svg', 
             onfile_convert_plantuml,
-            getattr(args, 'file', None), args.scale)
+            getattr(args, 'file', None), args.scale,
+            getattr(args, 'force', False))
         _img_walk(
             paths.plantumldir, '.svg', 
             paths.pngdir, '.png', 
             onfile_convert_svg,
-            getattr(args, 'file', None), args.scale)
+            getattr(args, 'file', None), args.scale,
+            getattr(args, 'force', False))
 
     if (args.command=='mermaid') or (args.command=='all'):
         _img_walk(
             paths.sourcedir, '.mmd', 
             paths.pngdir, '.png', 
             onfile_convert_mmd,
-            getattr(args, 'file', None), args.scale)
+            getattr(args, 'file', None), args.scale,
+            getattr(args, 'force', False))
 
     if (args.command=='umlet') or (args.command=='all'):
         _img_walk(
             paths.sourcedir, '.uxf', 
             paths.umletdir, '.svg', 
             onfile_convert_umlet,
-            getattr(args, 'file', None), args.scale)
+            getattr(args, 'file', None), args.scale,
+            getattr(args, 'force', False))
         _img_walk(
             paths.umletdir, '.svg', 
             paths.pngdir, '.png', 
             onfile_convert_svg,
-            getattr(args, 'file', None), args.scale)
+            getattr(args, 'file', None), args.scale,
+            getattr(args, 'force', False))

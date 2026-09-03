@@ -116,9 +116,13 @@ def configure_parser():
         help='bigger dpi for posters, set scale e.g. 4', 
         type=float, default=2.0)
     parser.add_argument( # limit to this file only
-        '-f', '--file', 
-        help='process only this file / directory', 
+        '-f', '--file',
+        help='process only this file / directory',
         default=None)
+    parser.add_argument( # force reconversion
+        '-F', '--force',
+        help='reconvert even if destination is newer than source',
+        action='store_true', default=False)
     parser.add_argument( # image source directory
         'imgsourcedir', 
         help='starting directory for images', 
