@@ -6,7 +6,69 @@ Jedným príkazom skonvertuje všetky obrázky v adresári (vrátane podadresár
 
 Konverzia je inkrementálna — súbor sa konvertuje len ak výstup ešte neexistuje, alebo ak je zdroj novší ako výstup. Prekonvertovanie všetkého sa dá vynútiť prepínačom `-F`.
 
+## Setup
+
+### Docker
+
+Ako prvy potrebujem zbuildovat image a dať ho do dockera, odkiaľ sa bude spúšťať.
+
+Image obsahuje python skripty, ImageMagick a drawio (PlantUML, UMLet a Mermaid zatiaľ nie).
+
+```bash
+# build (raz, v adresári convoj)
+docker build -t convoj .
+```
+
+### Nastavenie prostredia
+
+Aby som vedel ľahko spúšťať convoj odkiaľkoľvek, treba do `~/.local/bin` pridať linku na script
+
+```bash
+mkdir -p ~/.local/bin
+ln -s /home/vojto/Projects/convoj/convoj_docker.sh ~/.local/bin/convoj
+```
+
+```bash
+# ln -s /mnt/c/Projects_src/vojto_tools/convoj/convoj_docker.sh ~/.local/bin/convoj   # WSL, ak beží z Windows disku
+```
+
+`~/.local/bin` musí byť v PATH. Overenie:
+
+```bash
+echo $PATH | tr ':' '\n' | grep "$HOME/.local/bin"
+```
+
+Ak nie, treba na koniec `~/.profile` pridať riadok
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Overenie, že linka funguje:
+
+```bash
+type convoj        # má vypísať: convoj is /home/vojto/.local/bin/convoj
+```
+
+## Použitie
+
+```bash
+convoj -imgdir build/logo -imgdestdir build/img_png/logo svg   # vstupne svg hlada v build/logo a výstup ukladá do build/img_png/logo
+```
+
+Prepínače: 
+  `-f` (len daný súbor/adresár),  
+  `-F` (vynúť konverziu aj keď je výstup aktuálny),  
+  `-s` (mierka, default 2.0),  
+  `-l` (loglevel),  
+  `-g` (log do súboru).
+
+Príkazy: `all`, `clean`, `svg`, `drawio`, `plantuml`, `umlet`, `mermaid`, `archi`, `copy` (hotové `.png`/`.webp`/`.ico` sa nekonvertujú, len skopírujú do `img_png`).
+
+
 ## Ako to funguje
+
+### Python
 
 Convoj sa skladá z dvoch python skriptov:
 
@@ -25,85 +87,25 @@ Convoj teda sám nič nekreslí — iba prevoláva externé nástroje:
 | UMLet | `.uxf` | Umlet | `.uxf` → `.svg` → `.png` |
 | Mermaid | `.mmd` | mermaid-cli (`mmdc`) | `.mmd` → `.png` |
 
-## Použitie
+
+### Docker
+
+`convoj` smeruje na `/home/vojto/Projects/convoj/convoj_docker.sh`. Toto je wrapper namountuje projekt a spustí kontajner. 
+
+Bez wrappera by to bolo:
 
 ```bash
-./convoj_docker.sh all                  # skonvertuj všetko (v Dockeri)
-./convoj_docker.sh drawio               # len drawio súbory
-./convoj_docker.sh clean                # zmaž build/ (generované súbory)
-./convoj_docker.sh all -f Business/ciel # len konkrétny súbor / adresár
-./convoj_docker.sh all -s 4             # väčšia mierka (postery)
-convoj -imgdir build/logo -imgdestdir logo svg   # vstupne svg hlada v build/logo a výstup ukladá do build/img_png/logo
-```
-
-Príkazy: `all`, `clean`, `svg`, `drawio`, `plantuml`, `umlet`, `mermaid`, `archi`, `copy` (hotové `.png`/`.webp`/`.ico` sa nekonvertujú, len skopírujú do `img_png`).
-Prepínače: `-f` (len daný súbor/adresár), `-F` (vynúť konverziu aj keď je výstup aktuálny), `-s` (mierka, default 2.0), `-l` (loglevel), `-g` (log do súboru).
-
-Wrappery: `convoj_docker.sh` (Linux/WSL, spúšťa Docker kontajner), `convoj_linux.sh` (Linux/WSL natívne — nástroje musia byť nainštalované lokálne), `convoj.bat` (Windows natívne, s `CONVOJ_DOCKER=1` cez Docker).
-
-### setup na ubuntu
-
-Aby som vedel ľahko spúšťať convoj tak treba do `~/bin` pridať linku na script
-
-```bash
-mkdir -p ~/bin
-ln -s /mnt/c/Projects_src/vojto_tools/convoj/convoj_docker.sh ~/bin/convoj
-```
-
-Overenie, že ~/bin je v PATH
-
-```bash
-echo $PATH | tr ':' '\n' | grep "$HOME/bin"
-```
-
-Ak nie, tak to dobre pridať do `~/.profile`, na koniec treba pridať riadok
-
-```bash
-export PATH="$HOME/bin:$PATH"
-```
-
-Overí sa cez 
-
-```bash
-type convoj        # má vypísať: convoj is /home/vojtechbalint/bin/convoj
-```
-
-
-
-## Docker
-
-Image obsahuje python skripty, ImageMagick a drawio (PlantUML, UMLet a Mermaid zatiaľ nie).
-
-```bash
-# build (raz, v adresári convoj)
-docker build -t convoj .
-
-# spustenie — wrapper namountuje projekt a spustí kontajner
-cd ~/moj-projekt
-~/convoj/convoj_docker.sh all                 # Linux/WSL
-set CONVOJ_DOCKER=1 && convoj all             # Windows (spúšťať z koreňa projektu)
-
 # alebo priamo bez wrappera
 docker run --rm --user $(id -u):$(id -g) -v "$PWD:/work" convoj all
 ```
 
-Ako to funguje: drawio je Electron aplikácia, v kontajneri beží headless cez `xvfb-run` (wrapper `docker/drawio-wrapper.sh`). Projekt sa mountuje ako `/work`, výstupy pribudnú v `build/img_png/` na disku. Iný image nastavíš cez `CONVOJ_IMAGE`.
+Ako to funguje: drawio je Electron aplikácia, v kontajneri beží headless cez `xvfb-run` (wrapper `docker/drawio-wrapper.sh`). Projekt sa mountuje ako `/work`, výstupy pribudnú v `build/img_png/` na disku. 
 
-Aby sa `convoj` dal volať odkiaľkoľvek (WSL/Linux):
+Iný image nastavíš cez `CONVOJ_IMAGE`. Cesty k nástrojom sa dajú prebiť env premennými (inak default podľa OS): `CONVOJ_DRAWIO_CMD`, `CONVOJ_MAGICK_CMD`, `CONVOJ_UMLET_CMD`, `CONVOJ_MMDC_CMD`, `CONVOJ_PLANTUML_JAR`.
 
-```bash
-mkdir -p ~/.local/bin
-ln -s ~/Projects/vojto_tools/convoj/convoj_docker.sh ~/.local/bin/convoj
-ln -s /mnt/c/Projects_src/vojto_tools/convoj/convoj_docker.sh ~/.local/bin/convoj
-# alebo alias: echo "alias convoj='.../convoj_docker.sh'" >> ~/.bashrc
-```
+Wrappery: `convoj_docker.sh` (Linux/WSL, spúšťa Docker kontajner), `convoj_linux.sh` (Linux/WSL natívne — nástroje musia byť nainštalované lokálne), `convoj.bat` (Windows natívne, s `CONVOJ_DOCKER=1` cez Docker).
 
-V path potrebujem mať `~/.local/bin` 
-
-
-Cesty k nástrojom sa dajú prebiť env premennými (inak default podľa OS): `CONVOJ_DRAWIO_CMD`, `CONVOJ_MAGICK_CMD`, `CONVOJ_UMLET_CMD`, `CONVOJ_MMDC_CMD`, `CONVOJ_PLANTUML_JAR`.
-
-## Koncept
+### Koncept
 
 ![convoj koncept](convoj_concept.png)
 
