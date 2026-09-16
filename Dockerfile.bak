@@ -1,9 +1,7 @@
 FROM debian:bookworm-slim
 
 # https://github.com/jgraph/drawio-desktop/releases
-# POZOR: stencil archimate4 (shape=mxgraph.archimate4.element) je az od v31.x.
-# 30.3.14 ho nepozna -> neznamy shape spadne na obycajny obdlznik bez ikony.
-ARG DRAWIO_VERSION=31.4.5
+ARG DRAWIO_VERSION=30.3.14
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 \
