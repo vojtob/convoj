@@ -53,7 +53,8 @@ type convoj        # má vypísať: convoj is /home/vojto/.local/bin/convoj
 ## Použitie
 
 ```bash
-convoj -imgdir build/logo -imgdestdir build/img_png/logo svg   # vstupne svg hlada v build/logo a výstup ukladá do build/img_png/logo
+convoj SRC DST PRÍKAZ
+convoj build/logo build/img_png/logo svg   # vstupné svg hľadá v build/logo a výstup ukladá do build/img_png/logo
 ```
 
 Prepínače: 
@@ -61,21 +62,57 @@ Prepínače:
   `-F` (vynúť konverziu aj keď je výstup aktuálny),  
   `-s` (mierka, default 2.0),  
   `-l` (loglevel),  
-  `-g` (log do súboru).
+  `-g` (log do súboru),  
+  `-n` / `--dry-run` (len pre `prune`: iba vypíše, čo by zmazal).
 
-Príkazy: `all`, `clean`, `svg`, `drawio`, `plantuml`, `umlet`, `mermaid`, `archi`, `copy` (hotové `.png`/`.webp`/`.ico` sa nekonvertujú, len skopírujú do `img_png`).
+Príkazy: `all`, `clean`, `prune`, `svg`, `drawio`, `plantuml`, `umlet`, `mermaid`, `archi`, `copy` (hotové `.png`/`.webp`/`.ico` sa nekonvertujú, len skopírujú do `img_png`).
 
+Skryté súbory (začínajú bodkou, napr. zálohy draw.io `.$name.drawio.bkp`) a súbory v adresároch `old` a `build` sa nekonvertujú.
+
+### Mazanie osirelých výstupov (`prune`)
+
+Inkrementálne generovanie nikdy nič nemaže — keď zdroj zmažeš alebo premenuješ, jeho starý výstup v `DST` ostane (a napr. Antora ho ďalej publikuje). `clean` zmaže všetko a potom treba pomalé plné generovanie. `prune` zmaže **len** výstupy, ku ktorým už neexistuje zdroj, ostatné nechá, takže následné generovanie prekonvertuje len zmenené obrázky.
+
+Odporúčané poradie — najprv `prune`, potom generovanie:
+
+```bash
+convoj docs/img build/img-docs prune
+convoj docs/img build/img-docs svg
+convoj docs/img build/img-docs drawio
+```
+
+Ako rozhoduje:
+
+- Výstup je osirelý, keď k nemu neexistuje žiadny zdroj zo žiadneho typu. Nezáleží na tom, aký typ potom generuješ: `name.png` ostane, ak existuje `name.drawio`, `name.svg`, `name.puml`, … alebo `name.png` (typ `copy`).
+- Mapovanie zdroj → výstup sa berie z rovnakej tabuľky krokov ako konverzia (`STEPS` v `src/convert.py`), takže nový typ netreba v `prune` dopĺňať.
+- Medzivýstupy (`.puml` / `.uxf` → `.svg` → `.png`) sú tiež výstupy: `name.svg` aj `name.png` sa zmažú spolu. `.svg` v `DST` bez zdroja `.puml`/`.uxf` sa teda považuje za osirelé.
+- Za zdroj sa nepovažuje nič, čo convoj pri konverzii ignoruje (skryté súbory, `*.bkp`, adresáre `old`/`build`).
+- Maže len súbory s príponou, ktorú convoj vytvára (`.png`, `.svg`, `.webp`, `.ico`). Ostatné (napr. `notes.txt`) aj skryté súbory nechá a zaloguje na úrovni `debug`. Symlinky nesleduje ani nemaže.
+- Po zmazaní odstráni prázdne podadresáre v `DST`, ku ktorým už neexistuje zdrojový adresár (samotný `DST` nie). Prázdny adresár so zdrojom ostane — konverzia by ho aj tak znovu vytvorila.
+- Odmietne bežať (návratový kód 1, nič nezmaže), ak je `DST` rovnaký ako `SRC`, je v ňom vnorený, alebo ak je `SRC` vnorený v `DST`.
+- `-f` obmedzí mazanie na daný súbor / adresár (rovnako ako pri konverzii), `-n` iba vypíše, čo by zmazal.
+
+Log: každý zmazaný súbor `remove orphan <cesta>`, adresár `remove empty dir <cesta>`, na konci `pruned N files, M dirs`.
+
+### Testy
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+Testy spúšťajú `convoj.py` ako CLI, externé nástroje nahrádza `tests/fake_tool.py` (cez `CONVOJ_DRAWIO_CMD`, `CONVOJ_MAGICK_CMD`), takže netreba Docker ani drawio.
 
 ## Ako to funguje
 
 ### Python
 
-Convoj sa skladá z dvoch python skriptov:
+Convoj sa skladá z troch python skriptov:
 
 - **`src/convoj.py`** — obslužný program. 
     - Spracuje argumenty z príkazového riadku a nájde koreň projektu podľa adresárovej štruktúry, ktorú používam na projektoch (hľadá smerom nahor markery `.git`, `build`, `docs`, `src_doc`). 
     - Obrázky berie z `docs/img/` alebo `src_doc/img/`, výstup ukladá do `build/img_png/` so zachovaním štruktúry podadresárov.
-- **`src/convert.py`** — samotná konverzia. Prejde stromom zdrojov a pre každý súbor zavolá externý nástroj.
+- **`src/convert.py`** — samotná konverzia. Kroky konverzie sú v tabuľke `STEPS`; pre každý krok prejde stromom zdrojov a pre každý súbor zavolá externý nástroj.
+- **`src/prune.py`** — príkaz `prune`, z tabuľky `STEPS` odvodí, ktoré výstupy majú ešte zdroj.
 
 Convoj teda sám nič nekreslí — iba prevoláva externé nástroje:
 

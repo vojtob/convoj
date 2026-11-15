@@ -5,6 +5,7 @@ import shlex
 import shutil
 import subprocess
 import re
+from typing import Callable, NamedTuple
 
 logger = logging.getLogger(__name__)
 
@@ -49,42 +50,73 @@ def _is_up_to_date(fromfile, tofile):
     except OSError:
         return False  # ciel neexistuje / neda sa nacitat -> konvertuj
 
+# adresare, ktorych subory convoj preskakuje (len dany adresar, nie jeho podadresare)
+SKIP_DIRS = ('old', 'build')
+
+def is_skipped_dir(dirpath):
+    """True ak convoj subory v tomto adresari nespracuva."""
+    return Path(dirpath).name in SKIP_DIRS
+
+def is_source_name(name, extension):
+    """
+    True ak subor s tymto menom je zdroj s danou priponou.
+    Skryte subory (napr. zalohy draw.io `.$name.drawio.bkp`) sa za zdroj nepovazuju.
+    """
+    return name.endswith(extension) and not name.startswith('.')
+
+def walk_sources(source_path):
+    """Prejde adresare so zdrojmi presne tak, ako ich prechadza konverzia: (dirpath, filenames)."""
+    for (dirpath, _, filenames) in os.walk(source_path):
+        if is_skipped_dir(dirpath):
+            continue
+        yield dirpath, filenames
+
+def dest_path(ffrom, source_path, destination_path, orig_extension, new_extension):
+    """Cesta k vystupu pre zdrojovy subor `ffrom` (struktura podadresarov sa zachova)."""
+    rel = Path(ffrom).relative_to(source_path)
+    name = rel.name[:-len(orig_extension)] + new_extension
+    return str(Path(destination_path, rel.parent, name))
+
+def file_pattern(source_path, file):
+    """Regex pre prepinac -f: zhoduje sa so zaciatkom cesty bez pripony."""
+    if not file:
+        return None
+    return str(Path(source_path, file)).replace('\\', '/')
+
+def matches_file_pattern(pattern, path_without_suffix):
+    if pattern is None:
+        return True
+    return re.match(pattern, str(path_without_suffix).replace('\\', '/')) is not None
+
 def _img_walk(source_path, orig_extension, destination_path, new_extension, onfile, file, scale, force=False):
     logger.info(f'convert {str(source_path)}({orig_extension}) -> {str(destination_path)}({new_extension})')
 
     if Path(destination_path).resolve().is_relative_to(Path(source_path).resolve()):
         logger.error("Source path is a subpath of destination path. Aborting to prevent recursion.")
         return
-    if file:
-        pf = Path(source_path, file)
-        pf = str(pf).replace('\\', '/')
+    pf = file_pattern(source_path, file)
+    if pf:
         logger.info(f"Must match file path {pf}")
 
     # walk over files in from directory
-    for (dirpath, _, filenames) in os.walk(source_path):
-        p = Path(dirpath)
-        (_, tail) = os.path.split(p)
-        if str(tail) == 'old':
-            continue
-        if str(tail) == 'build':
-            continue
+    for (dirpath, filenames) in walk_sources(source_path):
         # create destination directory
-        d = Path(dirpath.replace(str(source_path), str(destination_path)))       
+        d = Path(destination_path, Path(dirpath).relative_to(source_path))
         d.mkdir(parents=True, exist_ok=True)
         # convert files with specific extension
-        for f in [f for f in filenames if f.endswith(orig_extension)]:          
+        for f in [f for f in filenames if is_source_name(f, orig_extension)]:
             # ffrom is original full name with path and orig extension
             ffrom = os.path.join(dirpath, f)
-            if file:
-                x = str(Path(ffrom).with_suffix('')).replace('\\', '/')
+            if pf:
+                x = Path(ffrom).with_suffix('')
                 logger.debug(f"pattern {pf}")
                 logger.debug(f"string {x}")
-                if not re.match(pf, x):
+                if not matches_file_pattern(pf, x):
                     # we want to process a specific file, but not this
                     continue
                 logger.debug(f"FILE matched {ffrom}")
             # fto is destination full name with path and new extension
-            fto = ffrom.replace(str(source_path), str(destination_path)).replace(orig_extension, new_extension)
+            fto = dest_path(ffrom, source_path, destination_path, orig_extension, new_extension)
             if not force and _is_up_to_date(ffrom, fto):
                 logger.debug(f'skip up-to-date {fto}')
                 continue
@@ -151,73 +183,41 @@ def onfile_copy(fromfile, orig_extension, tofile, new_extension, scale):
     logger.debug(f'copy {fromfile} -> {tofile}')
     shutil.copy2(fromfile, tofile)
 
-def run_convert(paths, args):
+class Step(NamedTuple):
+    """
+    Jeden krok konverzie: subory `src_ext` z adresara `paths.<src>`
+    -> subory `dst_ext` v adresari `paths.<dst>`.
+    Z tejto tabulky vychadza konverzia aj prikaz prune (mapovanie zdroj -> vystup).
+    """
+    commands: tuple
+    src: str
+    src_ext: str
+    dst: str
+    dst_ext: str
+    onfile: Callable
 
-    if (args.command=='copy') or (args.command=='all'):
-        for ext in ('.png', '.webp', '.ico'):
+STEPS = (
+    # hotove obrazky sa len skopiruju
+    Step(('copy', 'all'),     'sourcedir',   '.png',    'pngdir',      '.png',  onfile_copy),
+    Step(('copy', 'all'),     'sourcedir',   '.webp',   'pngdir',      '.webp', onfile_copy),
+    Step(('copy', 'all'),     'sourcedir',   '.ico',    'pngdir',      '.ico',  onfile_copy),
+    Step(('drawio', 'all'),   'sourcedir',   '.drawio', 'pngdir',      '.png',  onfile_convert_drawio),
+    Step(('svg', 'all'),      'sourcedir',   '.svg',    'pngdir',      '.png',  onfile_convert_svg),
+    Step(('archi', 'all'),    'archidir',    '.svg',    'pngdir',      '.png',  onfile_convert_svg),
+    # plantuml a umlet idu cez medzivystup svg
+    Step(('plantuml', 'all'), 'sourcedir',   '.puml',   'plantumldir', '.svg',  onfile_convert_plantuml),
+    Step(('plantuml', 'all'), 'plantumldir', '.svg',    'pngdir',      '.png',  onfile_convert_svg),
+    Step(('mermaid', 'all'),  'sourcedir',   '.mmd',    'pngdir',      '.png',  onfile_convert_mmd),
+    Step(('umlet', 'all'),    'sourcedir',   '.uxf',    'umletdir',    '.svg',  onfile_convert_umlet),
+    Step(('umlet', 'all'),    'umletdir',    '.svg',    'pngdir',      '.png',  onfile_convert_svg),
+)
+
+def run_convert(paths, args):
+    for step in STEPS:
+        if args.command in step.commands:
             _img_walk(
-                paths.sourcedir, ext,
-                paths.pngdir, ext,
-                onfile_copy,
+                getattr(paths, step.src), step.src_ext,
+                getattr(paths, step.dst), step.dst_ext,
+                step.onfile,
                 getattr(args, 'file', None), args.scale,
                 getattr(args, 'force', False))
-
-    if (args.command=='drawio') or (args.command=='all'):
-        _img_walk(
-            paths.sourcedir, '.drawio', 
-            paths.pngdir, '.png', 
-            onfile_convert_drawio,
-            getattr(args, 'file', None), args.scale,
-            getattr(args, 'force', False))
-
-    if (args.command=='svg') or (args.command=='all'):
-        _img_walk(
-            paths.sourcedir, '.svg', 
-            paths.pngdir, '.png', 
-            onfile_convert_svg,
-            getattr(args, 'file', None), args.scale,
-            getattr(args, 'force', False))
-
-    if (args.command=='archi') or (args.command=='all'):
-        _img_walk(
-            paths.archidir, '.svg', 
-            paths.pngdir, '.png', 
-            onfile_convert_svg,
-            getattr(args, 'file', None), args.scale,
-            getattr(args, 'force', False))
-
-    if (args.command=='plantuml') or (args.command=='all'):
-        _img_walk(
-            paths.sourcedir, '.puml', 
-            paths.plantumldir, '.svg', 
-            onfile_convert_plantuml,
-            getattr(args, 'file', None), args.scale,
-            getattr(args, 'force', False))
-        _img_walk(
-            paths.plantumldir, '.svg', 
-            paths.pngdir, '.png', 
-            onfile_convert_svg,
-            getattr(args, 'file', None), args.scale,
-            getattr(args, 'force', False))
-
-    if (args.command=='mermaid') or (args.command=='all'):
-        _img_walk(
-            paths.sourcedir, '.mmd', 
-            paths.pngdir, '.png', 
-            onfile_convert_mmd,
-            getattr(args, 'file', None), args.scale,
-            getattr(args, 'force', False))
-
-    if (args.command=='umlet') or (args.command=='all'):
-        _img_walk(
-            paths.sourcedir, '.uxf', 
-            paths.umletdir, '.svg', 
-            onfile_convert_umlet,
-            getattr(args, 'file', None), args.scale,
-            getattr(args, 'force', False))
-        _img_walk(
-            paths.umletdir, '.svg', 
-            paths.pngdir, '.png', 
-            onfile_convert_svg,
-            getattr(args, 'file', None), args.scale,
-            getattr(args, 'force', False))

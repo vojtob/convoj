@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+import sys
 import shutil
 import argparse
 from pathlib import Path
@@ -8,6 +9,7 @@ import logging
 from typing import Optional, Sequence
 
 import convert
+import prune
 
 logger = logging.getLogger(__name__)
 
@@ -123,6 +125,10 @@ def configure_parser():
         '-F', '--force',
         help='reconvert even if destination is newer than source',
         action='store_true', default=False)
+    parser.add_argument( # dry run for prune
+        '-n', '--dry-run',
+        help='prune: only log what would be removed, delete nothing',
+        action='store_true', default=False)
     parser.add_argument( # image source directory
         'imgsourcedir', 
         help='starting directory for images', 
@@ -133,10 +139,15 @@ def configure_parser():
         default=None)
     parser.add_argument( # command
         'command', #nargs='?', default='all', -> toto by znamenalo, ze nemusi zadat command, default je all
-        choices=['all', 'clean', 'svg', 'umlet', 'plantuml', 'mermaid', 'drawio', 'archi', 'copy'],
+        choices=['all', 'clean', 'prune', 'svg', 'umlet', 'plantuml', 'mermaid', 'drawio', 'archi', 'copy'],
         help="""
 all:      convert all images
 clean:    clean all generated files and folders
+prune:    remove only orphaned outputs (their source no longer exists) and
+          empty subfolders; run it before generating, e.g.
+            convoj docs/img build/img-docs prune
+            convoj docs/img build/img-docs drawio
+          supports -f (limit to file / folder) and -n (dry run)
 drawio:   convert drawio images, drawio images -> drawio -> png
 umlet:    convert umlet images, umlet -> svg -> png
 plantUML: convert plantUML images, plantUML images -> svg -> png
@@ -160,6 +171,10 @@ def run_command(paths, args):
         else:
             logger.debug(f'directory {paths.destdir} does not exist')
         logger.debug('done cleaning')
+
+    if args.command == 'prune':
+        if not prune.run_prune(paths, args):
+            sys.exit(1)
 
 
 if __name__ == '__main__':
